@@ -3,37 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Timeline App</title>
+    <title>Gantt Analytics Pro</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="full-screen-app">
 
-    <header>
-        <h1>Project Roadmap</h1>
+    <header class="main-header">
+        <h1>Project Tasks</h1>
+        <div class="header-right">
+            <div class="date-selector-pill">
+                <span>📅</span>
+                <select id="monthSelect"></select>
+                <select id="yearSelect"></select>
+            </div>
+        </div>
     </header>
 
-    <div class="timeline">
-        <div class="container left">
-            <div class="content">
-                <h2>2023</h2>
-                <p>Project Initialized. We started the research phase.</p>
+    <div class="main-layout">
+        <main class="gantt-viewport">
+            <div class="chart-window">
+                <div id="date-header" class="date-header"></div>
+                <div id="gantt-body" class="gantt-body"></div>
             </div>
-        </div>
-        
-        <div class="container right">
-            <div class="content">
-                <h2>2024</h2>
-                <p>Development Phase. Building the core infrastructure.</p>
-            </div>
-        </div>
+        </main>
 
-        <div class="container left">
-            <div class="content">
-                <h2>2025</h2>
-                <p>Launch. The application goes live to the public.</p>
+        <aside class="side-drawer" id="sidebar">
+            <div class="task-editor-panel" id="taskEditor">
+                <div class="panel-header">
+                    <h3 id="panelTitle">Project Details</h3>
+                    <button id="closeEditorBtn" class="exit-btn">✕</button>
+                </div>
+                <div class="drawer-content">
+                    <section class="drawer-section">
+                        <form id="taskForm">
+                            <input type="hidden" id="taskId">
+                            <div class="input-group">
+                                <label>Task Name</label>
+                                <input type="text" id="taskName" required placeholder="Project name">
+                            </div>
+                            <div class="input-row">
+                                <div class="input-group"><label>Start</label><input type="date" id="startDate" required></div>
+                                <div class="input-group"><label>End</label><input type="date" id="endDate" required></div>
+                            </div>
+                            <div class="input-group">
+                                <label>Category</label>
+                                <select id="taskCategory">
+                                    <option value="Work">Work</option>
+                                    <option value="Part-time">Part-time</option>
+                                    <option value="Life">Life</option>
+                                    <option value="Self">Self</option>
+                                    <option value="Family">Family</option>
+                                    <option value="Friends">Friends</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Subtasks</label>
+                                <div id="subtaskContainer" class="subtask-list"></div>
+                                <div class="subtask-add-row">
+                                    <input type="text" id="subtaskInput" placeholder="Add a subtask...">
+                                    <button type="button" id="addSubtaskBtn">+</button>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary">Save Project</button>
+                        </form>
+                    </section>
+
+                    <section class="drawer-section status-section">
+                        <h3>Project Status</h3>
+                        <div class="status-card">
+                            <div class="stat-main"><span id="compStat">0</span>/<span id="totalStatSmall">0</span></div>
+                            <p>Subtasks completed</p>
+                            <div class="progress-container">
+                                <div class="progress-bar" id="drawerProg" style="width: 0%"></div>
+                            </div>
+                            <small id="percentLabel">0% Complete</small>
+                        </div>
+                    </section>
+                </div>
             </div>
-        </div>
+
+            <div class="drawer-content">
+                <div class="stats-row">
+                    <div class="stat-card green"><span class="stat-label">Total</span><span class="stat-value" id="totalStat">0</span></div>
+                    <div class="stat-card blue"><span class="stat-label">Active</span><span class="stat-value" id="activeStat">0</span></div>
+                    <div class="stat-card purple"><span class="stat-label">Done</span><span class="stat-value" id="doneCount">0</span></div>
+                </div>
+
+                <section class="drawer-section">
+                    <h3>Category Breakdown</h3>
+                    <div style="height: 200px; margin-bottom: 20px;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="category-grid-legend" id="categoryList">
+                        </div>
+                </section>
+
+                <section class="drawer-section">
+                    <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <button class="cal-nav" id="prevCal" style="border:none; background:none; cursor:pointer;">❮</button>
+                        <h3 id="calMonthYear" style="margin:0; font-size: 14px;"></h3>
+                        <button class="cal-nav" id="nextCal" style="border:none; background:none; cursor:pointer;">❯</button>
+                    </div>
+                    <div class="calendar-grid" id="miniCalendar"></div>
+                </section>
+            </div>
+        </aside>
     </div>
+
+    <button class="fab" id="openModalBtn">+</button>
 
     <script src="script.js"></script>
 </body>
