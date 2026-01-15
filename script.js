@@ -1,159 +1,94 @@
-const monthSelect = document.getElementById('monthSelect');
-const yearSelect = document.getElementById('yearSelect');
-const dateHeader = document.getElementById('date-header');
-const ganttBody = document.getElementById('gantt-body');
-const taskEditor = document.getElementById('taskEditor');
-const subtaskContainer = document.getElementById('subtaskContainer');
-const subtaskInput = document.getElementById('subtaskInput');
-const categoryList = document.getElementById('categoryList');
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const catColors = { 
-    "Work": "#4d89ff", "Part-time": "#2ecc71", "Life": "#ff7675", 
-    "Self": "#a29bfe", "Family": "#ff9f43", "Friends": "#00d2d3" 
+const firebaseConfig = {
+  apiKey: "AIzaSyAFtu27m81jshmtbEAT5Z8Uy5nsEZX5RaE",
+  authDomain: "gantt-chart-23147.firebaseapp.com",
+  projectId: "gantt-chart-23147",
+  storageBucket: "gantt-chart-23147.firebasestorage.app",
+  messagingSenderId: "173532906920",
+  appId: "1:173532906920:web:7f02150d5886a74d9e899d"
 };
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 let tasks = [];
 let tempSubtasks = []; 
 let calMonth = new Date().getMonth();
 let calYear = new Date().getFullYear();
-let myPieChart = null; // Store chart instance
+let myPieChart = null;
 
-function init() {
-    months.forEach((m, i) => monthSelect.add(new Option(m, i)));
-    for (let i = 2024; i <= 2030; i++) yearSelect.add(new Option(i, i));
-    monthSelect.value = new Date().getMonth();
-    yearSelect.value = new Date().getFullYear();
+const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const catColors = { "Work": "#4d89ff", "Part-time": "#2ecc71", "Life": "#ff7675", "Self": "#a29bfe", "Family": "#ff9f43", "Friends": "#00d2d3" };
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        document.getElementById('authOverlay').style.display = 'none';
+        initSelectors();
+        loadTasks();
+    } else {
+        document.getElementById('authOverlay').style.display = 'flex';
+    }
+});
+
+async function loadTasks() {
+    const q = query(collection(db, "tasks"), where("userId", "==", auth.currentUser.uid));
+    const snap = await getDocs(q);
+    tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderChart();
 }
 
-function updatePieChart(counts) {
-    const ctx = document.getElementById('categoryChart').getContext('2d');
-    const labels = Object.keys(counts);
-    const data = Object.values(counts);
-    const colors = labels.map(label => catColors[label]);
-
-    if (myPieChart) {
-        myPieChart.destroy();
+function initSelectors() {
+    const mSel = document.getElementById('monthSelect');
+    const ySel = document.getElementById('yearSelect');
+    if (mSel.options.length === 0) {
+        months.forEach((m, i) => mSel.add(new Option(m, i)));
+        for (let i = 2024; i <= 2030; i++) ySel.add(new Option(i, i));
+        mSel.value = new Date().getMonth();
+        ySel.value = new Date().getFullYear();
     }
-
-    myPieChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: colors,
-                borderWidth: 0,
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false } // We use our custom legend
-            },
-            cutout: '70%'
-        }
-    });
 }
 
 function renderChart() {
-    const month = parseInt(monthSelect.value);
-    const year = parseInt(yearSelect.value);
+    const month = parseInt(document.getElementById('monthSelect').value);
+    const year = parseInt(document.getElementById('yearSelect').value);
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     document.documentElement.style.setProperty('--days-in-month', daysInMonth);
 
     let headerHtml = '';
     for (let d = 1; d <= daysInMonth; d++) {
         const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(year, month, d).getDay()];
-        headerHtml += `<div class="day-column-header" style="text-align:center;"><span style="color:#94a3b8; font-size:10px; display:block;">${dayName}</span><b>${d}</b></div>`;
+        headerHtml += `<div class="day-column-header"><span>${dayName}</span><b>${d}</b></div>`;
     }
-    dateHeader.innerHTML = headerHtml;
+    document.getElementById('date-header').innerHTML = headerHtml;
 
     let bodyHtml = '';
-    let catCounts = { "Work": 0, "Part-time": 0, "Life": 0, "Self": 0, "Family": 0, "Friends": 0 };
+    let counts = { "Work": 0, "Part-time": 0, "Life": 0, "Self": 0, "Family": 0, "Friends": 0 };
     
-    tasks.forEach(task => {
-        const start = new Date(task.start);
+    tasks.forEach(t => {
+        const start = new Date(t.start);
         if (start.getMonth() === month && start.getFullYear() === year) {
-            catCounts[task.category]++;
-            const duration = Math.max(1, Math.ceil((new Date(task.end) - start) / 86400000) + 1);
-            bodyHtml += `<div class="task-bar" style="grid-column: ${start.getDate()} / span ${duration}; background: ${catColors[task.category]}" onclick="editTask('${task.id}')">${task.name}</div>`;
+            counts[t.category]++;
+            const dur = Math.max(1, Math.ceil((new Date(t.end) - start) / 86400000) + 1);
+            bodyHtml += `<div class="task-bar" style="grid-column: ${start.getDate()} / span ${dur}; background: ${catColors[t.category]}" data-id="${t.id}">${t.name}</div>`;
         }
     });
-    ganttBody.innerHTML = bodyHtml;
+    document.getElementById('gantt-body').innerHTML = bodyHtml;
 
-    renderTodayLine(month, year);
-
-    // Update Category Legend and Pie Chart
-    categoryList.innerHTML = Object.entries(catCounts).map(([cat, count]) => `
-        <div class="category-pill">
-            <span><i class="category-dot" style="background:${catColors[cat]}"></i>${cat}</span>
-            <b>${count}</b>
-        </div>
-    `).join('');
+    // Attach Click Events to Task Bars
+    document.querySelectorAll('.task-bar').forEach(bar => {
+        bar.onclick = () => editTask(bar.getAttribute('data-id'));
+    });
     
-    updatePieChart(catCounts);
-
-    document.getElementById('totalStat').innerText = tasks.length;
-    document.getElementById('activeStat').innerText = tasks.filter(t => t.subtasks.some(s => !s.done)).length;
-    document.getElementById('doneCount').innerText = tasks.filter(t => t.subtasks.length > 0 && t.subtasks.every(s => s.done)).length;
-
+    updatePieChart(counts);
+    updateDashboardStats();
     renderMiniCalendar();
 }
 
-// ... Keep all other functions (renderTodayLine, Subtask Handling, Panel Logic, MiniCalendar) exactly as they were ...
-
-function renderTodayLine(m, y) {
-    const now = new Date();
-    if (now.getMonth() === m && now.getFullYear() === y) {
-        const day = now.getDate();
-        const offset = (day - 1 + (now.getHours() * 60 + now.getMinutes()) / 1440) * 80;
-        const line = document.createElement('div');
-        line.className = 'today-line';
-        line.style.left = `${offset}px`;
-        line.innerHTML = `<div class="time-label">${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}</div>`;
-        ganttBody.appendChild(line);
-    }
-}
-
-document.getElementById('addSubtaskBtn').onclick = () => {
-    if (subtaskInput.value.trim() === "") return;
-    tempSubtasks.push({ text: subtaskInput.value, done: false });
-    subtaskInput.value = "";
-    renderSubtaskList();
-};
-
-function renderSubtaskList() {
-    subtaskContainer.innerHTML = tempSubtasks.map((s, i) => `
-        <div class="subtask-item">
-            <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleSubtask(${i})">
-            <span class="${s.done ? 'done' : ''}">${s.text}</span>
-            <span onclick="removeSubtask(${i})" style="color:red; cursor:pointer; font-weight:bold; margin-left:auto;">✕</span>
-        </div>
-    `).join('');
-    updateDrawerStatus();
-}
-
-function toggleSubtask(index) { tempSubtasks[index].done = !tempSubtasks[index].done; renderSubtaskList(); }
-function removeSubtask(index) { tempSubtasks.splice(index, 1); renderSubtaskList(); }
-
-function updateDrawerStatus() {
-    const total = tempSubtasks.length;
-    const completed = tempSubtasks.filter(s => s.done).length;
-    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-    document.getElementById('compStat').innerText = completed;
-    document.getElementById('totalStatSmall').innerText = total;
-    document.getElementById('drawerProg').style.width = percent + "%";
-    document.getElementById('percentLabel').innerText = percent + "% Complete";
-}
-
-document.getElementById('openModalBtn').onclick = () => { resetForm(); document.getElementById('panelTitle').innerText = "Add New Project"; taskEditor.classList.add('active'); };
-document.getElementById('closeEditorBtn').onclick = () => taskEditor.classList.remove('active');
-
-function editTask(id) {
+window.editTask = (id) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
     document.getElementById('panelTitle').innerText = "Edit Project";
@@ -162,55 +97,113 @@ function editTask(id) {
     document.getElementById('startDate').value = task.start;
     document.getElementById('endDate').value = task.end;
     document.getElementById('taskCategory').value = task.category;
-    tempSubtasks = JSON.parse(JSON.stringify(task.subtasks)); 
+    document.getElementById('deleteTaskBtn').style.display = "block";
+    tempSubtasks = [...task.subtasks];
     renderSubtaskList();
-    taskEditor.classList.add('active');
+    document.getElementById('taskEditor').classList.add('active');
+};
+
+function renderSubtaskList() {
+    document.getElementById('subtaskContainer').innerHTML = tempSubtasks.map((s, i) => `
+        <div class="subtask-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+            <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleSub(${i})">
+            <span style="${s.done ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${s.text}</span>
+            <span onclick="removeSub(${i})" style="color:red; cursor:pointer; margin-left:auto;">✕</span>
+        </div>
+    `).join('');
 }
 
-function resetForm() {
-    document.getElementById('taskForm').reset();
-    document.getElementById('taskId').value = "";
-    tempSubtasks = [];
-    renderSubtaskList();
-}
+window.toggleSub = (i) => { tempSubtasks[i].done = !tempSubtasks[i].done; renderSubtaskList(); };
+window.removeSub = (i) => { tempSubtasks.splice(i, 1); renderSubtaskList(); };
 
-document.getElementById('taskForm').onsubmit = (e) => {
+document.getElementById('addSubtaskBtn').onclick = () => {
+    const val = document.getElementById('subtaskInput').value;
+    if (!val) return;
+    tempSubtasks.push({ text: val, done: false });
+    document.getElementById('subtaskInput').value = "";
+    renderSubtaskList();
+};
+
+document.getElementById('taskForm').onsubmit = async (e) => {
     e.preventDefault();
     const id = document.getElementById('taskId').value;
-    const taskData = {
-        id: id || Date.now().toString(),
+    const data = {
+        userId: auth.currentUser.uid,
         name: document.getElementById('taskName').value,
         category: document.getElementById('taskCategory').value,
         start: document.getElementById('startDate').value,
         end: document.getElementById('endDate').value,
         subtasks: [...tempSubtasks]
     };
-    if (id) {
-        const idx = tasks.findIndex(t => t.id === id);
-        tasks[idx] = taskData;
-    } else {
-        tasks.push(taskData);
-    }
-    renderChart();
-    taskEditor.classList.remove('active');
+    if (id) await updateDoc(doc(db, "tasks", id), data);
+    else await addDoc(collection(db, "tasks"), data);
+    
+    document.getElementById('taskEditor').classList.remove('active');
+    loadTasks();
 };
+
+document.getElementById('deleteTaskBtn').onclick = async () => {
+    const id = document.getElementById('taskId').value;
+    if (id && confirm("Are you sure you want to delete this project?")) {
+        await deleteDoc(doc(db, "tasks", id));
+        document.getElementById('taskEditor').classList.remove('active');
+        loadTasks();
+    }
+};
+
+function updateDashboardStats() {
+    document.getElementById('totalStat').innerText = tasks.length;
+    document.getElementById('activeStat').innerText = tasks.filter(t => t.subtasks.some(s => !s.done)).length;
+    document.getElementById('doneCount').innerText = tasks.filter(t => t.subtasks.length > 0 && t.subtasks.every(s => s.done)).length;
+}
+
+function updatePieChart(counts) {
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    if (myPieChart) myPieChart.destroy();
+    myPieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(counts),
+            datasets: [{ data: Object.values(counts), backgroundColor: Object.values(catColors), borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
+    });
+    document.getElementById('categoryList').innerHTML = Object.entries(counts).map(([cat, count]) => `
+        <div class="category-pill" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
+            <span><i class="category-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background:${catColors[cat]}; margin-right: 5px;"></i>${cat}</span>
+            <b>${count}</b>
+        </div>
+    `).join('');
+}
 
 function renderMiniCalendar() {
     document.getElementById('calMonthYear').innerText = `${months[calMonth]} ${calYear}`;
-    let html = ["S","M","T","W","T","F","S"].map(d => `<div style="font-size:10px; font-weight:700; color:#94a3b8; text-align:center">${d}</div>`).join('');
+    let html = ["S","M","T","W","T","F","S"].map(d => `<div class="cal-day-label">${d}</div>`).join('');
     const firstDay = new Date(calYear, calMonth, 1).getDay();
     const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
     for (let i = 0; i < firstDay; i++) html += `<div></div>`;
     for (let d = 1; d <= daysInMonth; d++) {
         const isToday = new Date().toDateString() === new Date(calYear, calMonth, d).toDateString() ? 'today' : '';
-        html += `<div class="cal-date ${isToday}" style="text-align:center; padding:5px 0; font-size:11px">${d}</div>`;
+        html += `<div class="cal-date ${isToday}">${d}</div>`;
     }
     document.getElementById('miniCalendar').innerHTML = html;
 }
 
+document.getElementById('openModalBtn').onclick = () => { 
+    document.getElementById('taskForm').reset(); 
+    document.getElementById('taskId').value = ""; 
+    document.getElementById('panelTitle').innerText = "Add Project";
+    document.getElementById('deleteTaskBtn').style.display = "none";
+    tempSubtasks = []; 
+    renderSubtaskList(); 
+    document.getElementById('taskEditor').classList.add('active'); 
+};
+
+document.getElementById('closeEditorBtn').onclick = () => document.getElementById('taskEditor').classList.remove('active');
+document.getElementById('loginBtn').onclick = () => signInWithEmailAndPassword(auth, document.getElementById('authEmail').value, document.getElementById('authPassword').value).catch(e => alert(e.message));
+document.getElementById('signupBtn').onclick = () => createUserWithEmailAndPassword(auth, document.getElementById('authEmail').value, document.getElementById('authPassword').value).catch(e => alert(e.message));
+document.getElementById('logoutBtn').onclick = () => signOut(auth);
 document.getElementById('prevCal').onclick = () => { calMonth--; if(calMonth < 0){calMonth=11; calYear--;} renderMiniCalendar(); };
 document.getElementById('nextCal').onclick = () => { calMonth++; if(calMonth > 11){calMonth=0; calYear++;} renderMiniCalendar(); };
-
-monthSelect.onchange = renderChart;
-yearSelect.onchange = renderChart;
-init();
+document.getElementById('monthSelect').onchange = renderChart;
+document.getElementById('yearSelect').onchange = renderChart;

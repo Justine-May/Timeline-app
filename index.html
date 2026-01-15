@@ -10,9 +10,23 @@
 </head>
 <body class="full-screen-app">
 
+    <div id="authOverlay" class="auth-overlay">
+        <div class="auth-card">
+            <h2>Gantt Pro</h2>
+            <p>Sign in to sync your projects</p>
+            <input type="email" id="authEmail" placeholder="Email address">
+            <input type="password" id="authPassword" placeholder="Password">
+            <div class="auth-buttons">
+                <button id="loginBtn" class="btn-primary">Login</button>
+                <button id="signupBtn" class="btn-secondary">Sign Up</button>
+            </div>
+        </div>
+    </div>
+
     <header class="main-header">
         <h1>Project Tasks</h1>
         <div class="header-right">
+            <button id="logoutBtn" class="logout-link">Logout</button>
             <div class="date-selector-pill">
                 <span>📅</span>
                 <select id="monthSelect"></select>
@@ -31,9 +45,9 @@
 
         <aside class="side-drawer" id="sidebar">
             <div class="task-editor-panel" id="taskEditor">
-                <div class="panel-header">
-                    <h3 id="panelTitle">Project Details</h3>
-                    <button id="closeEditorBtn" class="exit-btn">✕</button>
+                <div class="panel-header" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color);">
+                    <h3 id="panelTitle" style="margin: 0;">Project Details</h3>
+                    <button id="closeEditorBtn" class="exit-btn" style="background:none; border:none; font-size: 20px; cursor: pointer;">✕</button>
                 </div>
                 <div class="drawer-content">
                     <section class="drawer-section">
@@ -43,9 +57,9 @@
                                 <label>Task Name</label>
                                 <input type="text" id="taskName" required placeholder="Project name">
                             </div>
-                            <div class="input-row">
-                                <div class="input-group"><label>Start</label><input type="date" id="startDate" required></div>
-                                <div class="input-group"><label>End</label><input type="date" id="endDate" required></div>
+                            <div class="input-row" style="display: flex; gap: 10px;">
+                                <div class="input-group" style="flex: 1;"><label>Start</label><input type="date" id="startDate" required></div>
+                                <div class="input-group" style="flex: 1;"><label>End</label><input type="date" id="endDate" required></div>
                             </div>
                             <div class="input-group">
                                 <label>Category</label>
@@ -60,26 +74,15 @@
                             </div>
                             <div class="input-group">
                                 <label>Subtasks</label>
-                                <div id="subtaskContainer" class="subtask-list"></div>
-                                <div class="subtask-add-row">
-                                    <input type="text" id="subtaskInput" placeholder="Add a subtask...">
-                                    <button type="button" id="addSubtaskBtn">+</button>
+                                <div id="subtaskContainer" class="subtask-list" style="margin-bottom: 10px;"></div>
+                                <div class="subtask-add-row" style="display: flex; gap: 5px;">
+                                    <input type="text" id="subtaskInput" placeholder="Add a subtask..." style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <button type="button" id="addSubtaskBtn" style="padding: 0 12px; background: var(--primary-blue); color: white; border: none; border-radius: 8px; cursor: pointer;">+</button>
                                 </div>
                             </div>
                             <button type="submit" class="btn-primary">Save Project</button>
+                            <button type="button" id="deleteTaskBtn" style="width: 100%; margin-top: 10px; padding: 10px; border: 1px solid #ff7675; color: #ff7675; background: white; border-radius: 12px; font-weight: 600; cursor: pointer; display: none;">Delete Project</button>
                         </form>
-                    </section>
-
-                    <section class="drawer-section status-section">
-                        <h3>Project Status</h3>
-                        <div class="status-card">
-                            <div class="stat-main"><span id="compStat">0</span>/<span id="totalStatSmall">0</span></div>
-                            <p>Subtasks completed</p>
-                            <div class="progress-container">
-                                <div class="progress-bar" id="drawerProg" style="width: 0%"></div>
-                            </div>
-                            <small id="percentLabel">0% Complete</small>
-                        </div>
                     </section>
                 </div>
             </div>
@@ -93,20 +96,19 @@
 
                 <section class="drawer-section">
                     <h3>Category Breakdown</h3>
-                    <div style="height: 200px; margin-bottom: 20px;">
+                    <div style="height: 180px; margin-bottom: 10px;">
                         <canvas id="categoryChart"></canvas>
                     </div>
-                    <div class="category-grid-legend" id="categoryList">
-                        </div>
+                    <div class="category-grid-legend" id="categoryList"></div>
                 </section>
 
                 <section class="drawer-section">
-                    <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <button class="cal-nav" id="prevCal" style="border:none; background:none; cursor:pointer;">❮</button>
-                        <h3 id="calMonthYear" style="margin:0; font-size: 14px;"></h3>
-                        <button class="cal-nav" id="nextCal" style="border:none; background:none; cursor:pointer;">❯</button>
+                    <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <button class="cal-nav" id="prevCal">❮</button>
+                        <h3 id="calMonthYear" style="font-size: 14px; margin: 0;"></h3>
+                        <button class="cal-nav" id="nextCal">❯</button>
                     </div>
-                    <div class="calendar-grid" id="miniCalendar"></div>
+                    <div class="calendar-grid" id="miniCalendar" style="margin-top: 10px;"></div>
                 </section>
             </div>
         </aside>
@@ -114,6 +116,6 @@
 
     <button class="fab" id="openModalBtn">+</button>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
