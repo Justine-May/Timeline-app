@@ -74,17 +74,17 @@ function renderChart() {
             counts[t.category]++;
             const dur = Math.max(1, Math.ceil((new Date(t.end) - start) / 86400000) + 1);
             
-            // Progress Calculation
-            const totalSub = t.subtasks ? t.subtasks.length : 0;
-            const completedSub = t.subtasks ? t.subtasks.filter(s => s.done).length : 0;
-            const progress = totalSub > 0 ? (completedSub / totalSub) * 100 : 0;
-            const isDone = totalSub > 0 && totalSub === completedSub;
+            // Progress Logic
+            const total = t.subtasks ? t.subtasks.length : 0;
+            const done = t.subtasks ? t.subtasks.filter(s => s.done).length : 0;
+            const progress = total > 0 ? (done / total) * 100 : 0;
+            const fullyDone = total > 0 && total === done;
 
             bodyHtml += `
-                <div class="task-bar" style="grid-column: ${start.getDate()} / span ${dur}; background: ${catColors[t.category]}44" data-id="${t.id}">
+                <div class="task-bar" style="grid-column: ${start.getDate()} / span ${dur}; background: ${catColors[t.category]}55" data-id="${t.id}">
                     <div class="task-progress-fill" style="width: ${progress}%; background: ${catColors[t.category]}"></div>
-                    <span class="task-label">${t.name}</span>
-                    ${isDone ? '<span class="task-check">✓</span>' : ''}
+                    <span class="task-name-text">${t.name}</span>
+                    ${fullyDone ? '<span class="task-check-circle">✓</span>' : ''}
                 </div>`;
         }
     });
@@ -116,10 +116,10 @@ window.editTask = (id) => {
 
 function renderSubtaskList() {
     document.getElementById('subtaskContainer').innerHTML = tempSubtasks.map((s, i) => `
-        <div class="subtask-item">
+        <div class="subtask-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
             <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleSub(${i})">
             <span style="${s.done ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${s.text}</span>
-            <span onclick="removeSub(${i})" class="remove-sub">✕</span>
+            <span onclick="removeSub(${i})" style="color:red; cursor:pointer; margin-left:auto;">✕</span>
         </div>
     `).join('');
 }
@@ -180,8 +180,8 @@ function updatePieChart(counts) {
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
     });
     document.getElementById('categoryList').innerHTML = Object.entries(counts).map(([cat, count]) => `
-        <div class="category-pill">
-            <span><i class="category-dot" style="background:${catColors[cat]};"></i>${cat}</span>
+        <div class="category-pill" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
+            <span><i class="category-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background:${catColors[cat]}; margin-right: 5px;"></i>${cat}</span>
             <b>${count}</b>
         </div>
     `).join('');
