@@ -73,12 +73,23 @@ function renderChart() {
         if (start.getMonth() === month && start.getFullYear() === year) {
             counts[t.category]++;
             const dur = Math.max(1, Math.ceil((new Date(t.end) - start) / 86400000) + 1);
-            bodyHtml += `<div class="task-bar" style="grid-column: ${start.getDate()} / span ${dur}; background: ${catColors[t.category]}" data-id="${t.id}">${t.name}</div>`;
+            
+            // Progress Calculation
+            const totalSub = t.subtasks ? t.subtasks.length : 0;
+            const completedSub = t.subtasks ? t.subtasks.filter(s => s.done).length : 0;
+            const progress = totalSub > 0 ? (completedSub / totalSub) * 100 : 0;
+            const isDone = totalSub > 0 && totalSub === completedSub;
+
+            bodyHtml += `
+                <div class="task-bar" style="grid-column: ${start.getDate()} / span ${dur}; background: ${catColors[t.category]}44" data-id="${t.id}">
+                    <div class="task-progress-fill" style="width: ${progress}%; background: ${catColors[t.category]}"></div>
+                    <span class="task-label">${t.name}</span>
+                    ${isDone ? '<span class="task-check">✓</span>' : ''}
+                </div>`;
         }
     });
     document.getElementById('gantt-body').innerHTML = bodyHtml;
 
-    // Attach Click Events to Task Bars
     document.querySelectorAll('.task-bar').forEach(bar => {
         bar.onclick = () => editTask(bar.getAttribute('data-id'));
     });
@@ -98,17 +109,17 @@ window.editTask = (id) => {
     document.getElementById('endDate').value = task.end;
     document.getElementById('taskCategory').value = task.category;
     document.getElementById('deleteTaskBtn').style.display = "block";
-    tempSubtasks = [...task.subtasks];
+    tempSubtasks = task.subtasks ? [...task.subtasks] : [];
     renderSubtaskList();
     document.getElementById('taskEditor').classList.add('active');
 };
 
 function renderSubtaskList() {
     document.getElementById('subtaskContainer').innerHTML = tempSubtasks.map((s, i) => `
-        <div class="subtask-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+        <div class="subtask-item">
             <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleSub(${i})">
             <span style="${s.done ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${s.text}</span>
-            <span onclick="removeSub(${i})" style="color:red; cursor:pointer; margin-left:auto;">✕</span>
+            <span onclick="removeSub(${i})" class="remove-sub">✕</span>
         </div>
     `).join('');
 }
@@ -153,8 +164,8 @@ document.getElementById('deleteTaskBtn').onclick = async () => {
 
 function updateDashboardStats() {
     document.getElementById('totalStat').innerText = tasks.length;
-    document.getElementById('activeStat').innerText = tasks.filter(t => t.subtasks.some(s => !s.done)).length;
-    document.getElementById('doneCount').innerText = tasks.filter(t => t.subtasks.length > 0 && t.subtasks.every(s => s.done)).length;
+    document.getElementById('activeStat').innerText = tasks.filter(t => t.subtasks && t.subtasks.some(s => !s.done)).length;
+    document.getElementById('doneCount').innerText = tasks.filter(t => t.subtasks && t.subtasks.length > 0 && t.subtasks.every(s => s.done)).length;
 }
 
 function updatePieChart(counts) {
@@ -169,8 +180,8 @@ function updatePieChart(counts) {
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
     });
     document.getElementById('categoryList').innerHTML = Object.entries(counts).map(([cat, count]) => `
-        <div class="category-pill" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
-            <span><i class="category-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background:${catColors[cat]}; margin-right: 5px;"></i>${cat}</span>
+        <div class="category-pill">
+            <span><i class="category-dot" style="background:${catColors[cat]};"></i>${cat}</span>
             <b>${count}</b>
         </div>
     `).join('');
