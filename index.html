@@ -11,110 +11,101 @@
 <body class="full-screen-app">
     <div id="authOverlay" class="auth-overlay">
         <div class="auth-card">
-            <div class="logo-circle">G</div>
-            <h2>Welcome Back</h2>
-            <p>Sign in to manage your timeline</p>
+            <h2>Gantt Pro</h2>
+            <p>Sign in to sync your projects</p>
             <input type="email" id="authEmail" placeholder="Email address">
             <input type="password" id="authPassword" placeholder="Password">
             <div class="auth-buttons">
                 <button id="loginBtn" class="btn-primary">Login</button>
-                <button id="signupBtn" class="btn-secondary">Create Account</button>
+                <button id="signupBtn" class="btn-secondary">Sign Up</button>
             </div>
         </div>
     </div>
-
     <header class="main-header">
-        <div class="header-left">
-            <span class="brand-badge">PRO</span>
-            <h1>Project Analytics</h1>
-        </div>
+        <h1>Project Tasks</h1>
         <div class="header-right">
+            <button id="logoutBtn" class="logout-link">Logout</button>
             <div class="date-selector-pill">
+                <span>📅</span>
                 <select id="monthSelect"></select>
                 <select id="yearSelect"></select>
             </div>
-            <button id="logoutBtn" class="logout-link">Sign Out</button>
         </div>
     </header>
-
     <div class="main-layout">
         <main class="gantt-viewport">
             <div class="chart-window">
                 <div id="date-header" class="date-header"></div>
-                <div id="gantt-body" class="gantt-body">
-                    <div id="empty-state" class="empty-state" style="display:none;">
-                        <p>No projects scheduled for this month.</p>
-                    </div>
-                </div>
+                <div id="gantt-body" class="gantt-body"></div>
             </div>
         </main>
-
-        <aside class="side-drawer">
+        <aside class="side-drawer" id="sidebar">
             <div class="task-editor-panel" id="taskEditor">
-                <div class="panel-header">
-                    <h3 id="panelTitle">New Project</h3>
-                    <button id="closeEditorBtn" class="exit-btn">✕</button>
+                <div class="panel-header" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color);">
+                    <h3 id="panelTitle" style="margin: 0;">Project Details</h3>
+                    <button id="closeEditorBtn" class="exit-btn" style="background:none; border:none; font-size: 20px; cursor: pointer;">✕</button>
                 </div>
-                <div class="drawer-content task-form-content">
-                    <form id="taskForm">
-                        <input type="hidden" id="taskId">
-                        <div class="input-group">
-                            <input type="text" id="taskName" required placeholder="Project name">
-                        </div>
-                        <div class="input-group input-row">
-                            <input type="date" id="startDate" required>
-                            <input type="date" id="endDate" required>
-                        </div>
-                        <div class="input-group">
-                            <select id="taskCategory">
-                                <option value="Work">Work</option>
-                                <option value="Part-time">Part-time</option>
-                                <option value="Life">Life</option>
-                                <option value="Self">Self</option>
-                                <option value="Family">Family</option>
-                                <option value="Friends">Friends</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <div id="subtaskContainer" class="subtask-list"></div>
-                            <div class="subtask-add-row">
-                                <input type="text" id="subtaskInput" placeholder="Add subtask">
-                                <button type="button" id="addSubtaskBtn">+</button>
+                <div class="drawer-content">
+                    <section class="drawer-section">
+                        <form id="taskForm">
+                            <input type="hidden" id="taskId">
+                            <div class="input-group">
+                                <label>Task Name</label>
+                                <input type="text" id="taskName" required placeholder="Project name">
                             </div>
-                        </div>
-                        <button type="submit" class="btn-primary">Save</button>
-                        <button type="button" id="deleteTaskBtn" class="btn-delete">Delete</button>
-                    </form>
+                            <div class="input-row" style="display: flex; gap: 10px;">
+                                <div class="input-group" style="flex: 1;"><label>Start</label><input type="date" id="startDate" required></div>
+                                <div class="input-group" style="flex: 1;"><label>End</label><input type="date" id="endDate" required></div>
+                            </div>
+                            <div class="input-group">
+                                <label>Category</label>
+                                <select id="taskCategory">
+                                    <option value="Work">Work</option>
+                                    <option value="Part-time">Part-time</option>
+                                    <option value="Life">Life</option>
+                                    <option value="Self">Self</option>
+                                    <option value="Family">Family</option>
+                                    <option value="Friends">Friends</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Subtasks</label>
+                                <div id="subtaskContainer" class="subtask-list" style="margin-bottom: 10px;"></div>
+                                <div class="subtask-add-row" style="display: flex; gap: 5px;">
+                                    <input type="text" id="subtaskInput" placeholder="Add a subtask..." style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <button type="button" id="addSubtaskBtn" style="padding: 0 12px; background: var(--primary-blue); color: white; border: none; border-radius: 8px; cursor: pointer;">+</button>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary">Save Project</button>
+                            <button type="button" id="deleteTaskBtn" style="width: 100%; margin-top: 10px; padding: 10px; border: 1px solid #ff7675; color: #ff7675; background: white; border-radius: 12px; font-weight: 600; cursor: pointer; display: none;">Delete Project</button>
+                        </form>
+                    </section>
                 </div>
             </div>
-
-            <div class="drawer-content main-sidebar-view">
+            <div class="drawer-content">
                 <div class="stats-row">
-                    <div class="stat-card blue"><span class="stat-label">TOTAL</span><span class="stat-value" id="totalStat">0</span></div>
-                    <div class="stat-card green"><span class="stat-label">ACTIVE</span><span class="stat-value" id="activeStat">0</span></div>
-                    <div class="stat-card purple"><span class="stat-label">DONE</span><span class="stat-value" id="doneCount">0</span></div>
+                    <div class="stat-card green"><span class="stat-label">Total</span><span class="stat-value" id="totalStat">0</span></div>
+                    <div class="stat-card blue"><span class="stat-label">Active</span><span class="stat-value" id="activeStat">0</span></div>
+                    <div class="stat-card purple"><span class="stat-label">Done</span><span class="stat-value" id="doneCount">0</span></div>
                 </div>
-                
                 <section class="drawer-section">
-                    <h3>Allocation</h3>
-                    <div class="chart-container">
+                    <h3>Category Breakdown</h3>
+                    <div style="height: 180px; margin-bottom: 10px;">
                         <canvas id="categoryChart"></canvas>
                     </div>
                     <div class="category-grid-legend" id="categoryList"></div>
                 </section>
-
                 <section class="drawer-section">
-                    <div class="calendar-header">
+                    <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <button class="cal-nav" id="prevCal">❮</button>
-                        <h3 id="calMonthYear"></h3>
+                        <h3 id="calMonthYear" style="font-size: 14px; margin: 0;"></h3>
                         <button class="cal-nav" id="nextCal">❯</button>
                     </div>
-                    <div class="calendar-grid" id="miniCalendar"></div>
+                    <div class="calendar-grid" id="miniCalendar" style="margin-top: 10px;"></div>
                 </section>
             </div>
         </aside>
     </div>
-
     <button class="fab" id="openModalBtn">+</button>
     <script type="module" src="script.js"></script>
 </body>
