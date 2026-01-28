@@ -55,11 +55,9 @@ function initSelectors() {
 function renderChart() {
     const month = parseInt(document.getElementById('monthSelect').value);
     const year = parseInt(document.getElementById('yearSelect').value);
-    
     const viewStart = new Date(year, month, 1);
     const viewEnd = new Date(year, month + 1, 0);
     const daysInMonth = viewEnd.getDate();
-    
     document.documentElement.style.setProperty('--days-in-month', daysInMonth);
 
     let headerHtml = '';
@@ -76,16 +74,14 @@ function renderChart() {
         const taskStart = new Date(t.start);
         const taskEnd = new Date(t.end);
 
-        // Check if task overlaps with current month view
         if (taskStart <= viewEnd && taskEnd >= viewStart) {
             counts[t.category]++;
+            const isLeftClipped = taskStart < viewStart;
+            const isRightClipped = taskEnd > viewEnd;
 
-            const isClippedLeft = taskStart < viewStart;
-            const isClippedRight = taskEnd > viewEnd;
-
-            const startPos = isClippedLeft ? 1 : taskStart.getDate();
-            const endPos = isClippedRight ? daysInMonth : taskEnd.getDate();
-            const displayDuration = (endPos - startPos) + 1;
+            const startPos = isLeftClipped ? 1 : taskStart.getDate();
+            const endPos = isRightClipped ? daysInMonth : taskEnd.getDate();
+            const dur = (endPos - startPos) + 1;
 
             const total = t.subtasks ? t.subtasks.length : 0;
             const done = t.subtasks ? t.subtasks.filter(s => s.done).length : 0;
@@ -93,23 +89,23 @@ function renderChart() {
             const fullyDone = total > 0 && total === done;
 
             bodyHtml += `
-                <div class="task-bar ${isClippedLeft ? 'clipped-left' : ''} ${isClippedRight ? 'clipped-right' : ''}" 
-                     style="grid-column: ${startPos} / span ${displayDuration}; background: ${catColors[t.category]}55" 
+                <div class="task-bar ${isLeftClipped ? 'clipped-left' : ''} ${isRightClipped ? 'clipped-right' : ''}" 
+                     style="grid-column: ${startPos} / span ${dur}; background: ${catColors[t.category]}55" 
                      data-id="${t.id}">
                     <div class="task-progress-fill" style="width: ${progress}%; background: ${catColors[t.category]}"></div>
-                    <div class="task-content-wrapper">
-                        ${isClippedLeft ? '<span class="ext-arrow">⇠</span>' : ''}
+                    <div class="task-inner-ui">
+                        ${isLeftClipped ? '<span class="arrow">⇠</span>' : ''}
                         <span class="task-name-text">${t.name}</span>
-                        <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:5px;">
                             ${fullyDone ? '<span class="task-check-circle">✓</span>' : ''}
-                            ${isClippedRight ? '<span class="ext-arrow">⇢</span>' : ''}
+                            ${isRightClipped ? '<span class="arrow">⇢</span>' : ''}
                         </div>
                     </div>
                 </div>`;
         }
     });
-    
     document.getElementById('gantt-body').innerHTML = bodyHtml;
+
     document.querySelectorAll('.task-bar').forEach(bar => {
         bar.onclick = () => editTask(bar.getAttribute('data-id'));
     });
