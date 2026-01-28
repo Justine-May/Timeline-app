@@ -22,7 +22,10 @@ let calYear = new Date().getFullYear();
 let myPieChart = null;
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const catColors = { "Work": "#4d89ff", "Part-time": "#2ecc71", "Life": "#ff7675", "Self": "#a29bfe", "Family": "#ff9f43", "Friends": "#00d2d3" };
+const catColors = { 
+    "Work": "#4d89ff", "Part-time": "#2ecc71", "Life": "#ff7675", 
+    "Self": "#a29bfe", "Family": "#ff9f43", "Friends": "#00d2d3" 
+};
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -61,6 +64,7 @@ function renderChart() {
     const daysInMonth = viewEnd.getDate();
     document.documentElement.style.setProperty('--days-in-month', daysInMonth);
 
+    // Header
     let headerHtml = '';
     for (let d = 1; d <= daysInMonth; d++) {
         const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(year, month, d).getDay()];
@@ -68,7 +72,7 @@ function renderChart() {
     }
     document.getElementById('date-header').innerHTML = headerHtml;
 
-    // Today Red Line Logic
+    // Red Line Logic
     const today = new Date();
     let lineHtml = '';
     if (today.getMonth() === month && today.getFullYear() === year) {
@@ -95,11 +99,12 @@ function renderChart() {
             const done = t.subtasks ? t.subtasks.filter(s => s.done).length : 0;
             const progress = total > 0 ? (done / total) * 100 : 0;
             const fullyDone = total > 0 && total === done;
+            const taskColor = catColors[t.category] || "#94a3b8"; // Fallback color
 
             bodyHtml += `
                 <div class="task-bar ${isLC ? 'clipped-left' : ''} ${isRC ? 'clipped-right' : ''}" 
-                     style="grid-column: ${startPos} / span ${dur}; background: ${catColors[t.category]}44" data-id="${t.id}">
-                    <div class="task-progress-fill" style="width: ${progress}%; background: ${catColors[t.category]}"></div>
+                     style="grid-column: ${startPos} / span ${dur}; background: ${taskColor}44" data-id="${t.id}">
+                    <div class="task-progress-fill" style="width: ${progress}%; background: ${taskColor}"></div>
                     <div class="task-inner-content">
                         ${isLC ? '<span class="arrow-glyph">⇠</span>' : ''}
                         <span class="task-name-span">${t.name}</span>
@@ -139,10 +144,10 @@ window.editTask = (id) => {
 
 function renderSubtaskList() {
     document.getElementById('subtaskContainer').innerHTML = tempSubtasks.map((s, i) => `
-        <div class="subtask-item">
+        <div class="subtask-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
             <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleSub(${i})">
-            <span class="${s.done ? 'done' : ''}">${s.text}</span>
-            <span onclick="removeSub(${i})" class="remove-btn">✕</span>
+            <span style="${s.done ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${s.text}</span>
+            <span onclick="removeSub(${i})" style="color:red; cursor:pointer; margin-left:auto;">✕</span>
         </div>
     `).join('');
 }
@@ -178,7 +183,7 @@ document.getElementById('taskForm').onsubmit = async (e) => {
 
 document.getElementById('deleteTaskBtn').onclick = async () => {
     const id = document.getElementById('taskId').value;
-    if (id && confirm("Are you sure you want to delete this project?")) {
+    if (id && confirm("Delete this project?")) {
         await deleteDoc(doc(db, "tasks", id));
         document.getElementById('taskEditor').classList.remove('active');
         await loadTasks();
@@ -203,8 +208,8 @@ function updatePieChart(counts) {
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
     });
     document.getElementById('categoryList').innerHTML = Object.entries(counts).map(([cat, count]) => `
-        <div class="category-pill">
-            <span><i class="category-dot" style="background:${catColors[cat]}"></i>${cat}</span>
+        <div class="category-pill" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
+            <span><i class="category-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background:${catColors[cat]}; margin-right: 5px;"></i>${cat}</span>
             <b>${count}</b>
         </div>
     `).join('');

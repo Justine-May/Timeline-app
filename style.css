@@ -12,14 +12,10 @@ body, html { margin: 0; padding: 0; height: 100vh; font-family: 'Plus Jakarta Sa
 .full-screen-app { display: flex; flex-direction: column; height: 100vh; }
 .main-layout { display: flex; flex: 1; overflow: hidden; }
 
-/* Auth Overlay */
+/* Header & Auth */
 .auth-overlay { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 2000; display: flex; align-items: center; justify-content: center; }
 .auth-card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); width: 320px; text-align: center; border: 1px solid var(--border-color); }
-.auth-card input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 12px; border: 1px solid var(--border-color); box-sizing: border-box; outline: none; }
-
-/* Header */
 .main-header { display: flex; justify-content: space-between; padding: 15px 40px; border-bottom: 1px solid var(--border-color); background: #fff; align-items: center; }
-.logout-link { color: var(--primary-red); border: none; background: none; font-weight: 700; cursor: pointer; margin-right: 20px; font-size: 13px; }
 
 /* Gantt Chart Grid */
 .gantt-viewport { flex: 1; overflow: auto; padding: 20px; }
@@ -37,10 +33,11 @@ body, html { margin: 0; padding: 0; height: 100vh; font-family: 'Plus Jakarta Sa
     position: relative; 
 }
 
-/* Red Line Marker */
+/* Red Line Today Marker */
 .today-marker {
     position: absolute;
-    top: 0; bottom: 0;
+    top: 0;
+    bottom: 0;
     width: 2px;
     background: var(--primary-red);
     z-index: 1;
@@ -56,46 +53,35 @@ body, html { margin: 0; padding: 0; height: 100vh; font-family: 'Plus Jakarta Sa
 }
 .task-bar.clipped-left { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: 0; }
 .task-bar.clipped-right { border-top-right-radius: 0; border-bottom-right-radius: 0; margin-right: 0; }
-
 .task-progress-fill { position: absolute; top: 0; left: 0; height: 100%; z-index: 1; transition: width 0.3s ease; }
 .task-inner-content { position: relative; z-index: 2; width: 100%; display: flex; justify-content: space-between; align-items: center; }
 .task-name-span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
 .checkmark-icon { background: white; color: #2ecc71; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; }
 .arrow-glyph { font-size: 18px; margin: 0 4px; opacity: 0.8; }
 
-/* Minimalist Task Editor Drawer */
-.task-editor-panel { 
-    position: absolute; top: 0; right: -100%; width: 100%; height: 100%; 
-    background: white; z-index: 100; 
-    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-    display: flex; flex-direction: column; 
-    border-left: 1px solid var(--border-color); 
-    box-shadow: -10px 0 30px rgba(0,0,0,0.05);
-}
-.task-editor-panel.active { right: 0; }
-
-.drawer-content { padding: 32px 24px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
-
-.input-group label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; }
-.input-group input, .input-group select { 
-    border: none; border-bottom: 2px solid var(--border-color); 
-    padding: 10px 0; font-size: 15px; background: transparent; 
-}
-.input-group input:focus { outline: none; border-bottom-color: var(--primary-blue); }
-
-.subtask-item { background: #f8faff; padding: 12px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
-.subtask-item span.done { text-decoration: line-through; opacity: 0.5; }
-.remove-btn { color: var(--primary-red); cursor: pointer; margin-left: auto; }
-
-/* Dashboard UI */
+/* Original Sidebar UI */
 .side-drawer { width: var(--drawer-width); background: #fff; border-left: 1px solid var(--border-color); position: relative; overflow: hidden; }
-.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
-.stat-card { padding: 15px 10px; border-radius: 18px; text-align: center; color: white; }
+.drawer-content { padding: 24px; display: flex; flex-direction: column; gap: 20px; height: 100%; overflow-y: auto; box-sizing: border-box; }
+.drawer-section { background: #fbfcfe; padding: 20px; border-radius: 20px; border: 1px solid var(--border-color); }
+.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.stat-card { padding: 15px 10px; border-radius: 18px; text-align: center; color: white; display: flex; flex-direction: column; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 .stat-card.green { background: #55efc4; } 
 .stat-card.blue { background: #74b9ff; } 
 .stat-card.purple { background: #a29bfe; }
+.stat-label { font-size: 10px; font-weight: 600; opacity: 0.9; }
+.stat-value { font-size: 24px; font-weight: 800; }
 
-.category-pill { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
-.category-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+/* Editor Panel Reverted to Original */
+.task-editor-panel { position: absolute; top: 0; right: -100%; width: 100%; height: 100%; background: white; z-index: 100; transition: right 0.4s ease; display: flex; flex-direction: column; border-left: 1px solid var(--border-color); }
+.task-editor-panel.active { right: 0; }
+.input-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
+.input-group label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.input-group input, .input-group select { padding: 10px; border: 1px solid var(--border-color); border-radius: 10px; }
 
+/* Mini Calendar */
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.cal-date.today { background: var(--primary-blue); color: white; }
+
+/* Global UI */
+.btn-primary { background: var(--primary-blue); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; }
 .fab { position: fixed; bottom: 30px; right: 410px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary-blue); color: white; border: none; font-size: 30px; cursor: pointer; box-shadow: 0 10px 20px rgba(77,137,255,0.3); z-index: 10; }
