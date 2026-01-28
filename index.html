@@ -52,22 +52,20 @@
         <aside class="side-drawer">
             <div class="task-editor-panel" id="taskEditor">
                 <div class="panel-header">
-                    <h3 id="panelTitle">Project Details</h3>
+                    <h3 id="panelTitle">New Project</h3>
                     <button id="closeEditorBtn" class="exit-btn">✕</button>
                 </div>
-                <div class="drawer-content">
+                <div class="drawer-content task-form-content">
                     <form id="taskForm">
                         <input type="hidden" id="taskId">
                         <div class="input-group">
-                            <label>Project Name</label>
-                            <input type="text" id="taskName" required placeholder="Enter name...">
+                            <input type="text" id="taskName" required placeholder="Project name">
                         </div>
-                        <div class="input-row">
-                            <div class="input-group"><label>Start</label><input type="date" id="startDate" required></div>
-                            <div class="input-group"><label>End</label><input type="date" id="endDate" required></div>
+                        <div class="input-group input-row">
+                            <input type="date" id="startDate" required>
+                            <input type="date" id="endDate" required>
                         </div>
                         <div class="input-group">
-                            <label>Category</label>
                             <select id="taskCategory">
                                 <option value="Work">Work</option>
                                 <option value="Part-time">Part-time</option>
@@ -78,15 +76,14 @@
                             </select>
                         </div>
                         <div class="input-group">
-                            <label>Checklist</label>
                             <div id="subtaskContainer" class="subtask-list"></div>
                             <div class="subtask-add-row">
-                                <input type="text" id="subtaskInput" placeholder="Add subtask...">
+                                <input type="text" id="subtaskInput" placeholder="Add subtask">
                                 <button type="button" id="addSubtaskBtn">+</button>
                             </div>
                         </div>
-                        <button type="submit" class="btn-primary">Save Changes</button>
-                        <button type="button" id="deleteTaskBtn" class="btn-delete">Delete Project</button>
+                        <button type="submit" class="btn-primary">Save</button>
+                        <button type="button" id="deleteTaskBtn" class="btn-delete">Delete</button>
                     </form>
                 </div>
             </div>
