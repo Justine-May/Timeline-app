@@ -23,56 +23,79 @@ body, html { margin: 0; padding: 0; height: 100vh; font-family: 'Plus Jakarta Sa
 
 /* Gantt Chart Grid */
 .gantt-viewport { flex: 1; overflow: auto; padding: 20px; }
-.chart-window { background: white; border: 1px solid var(--border-color); border-radius: 24px; min-width: max-content; }
+.chart-window { background: white; border: 1px solid var(--border-color); border-radius: 24px; min-width: max-content; position: relative; }
 .date-header { display: grid; grid-template-columns: repeat(var(--days-in-month), var(--cell-width)); border-bottom: 1px solid var(--border-color); }
 .day-column-header { text-align: center; padding: 10px 0; border-right: 1px solid var(--border-color); }
 .day-column-header span { color: var(--text-muted); font-size: 10px; display: block; text-transform: uppercase; }
-.gantt-body { display: grid; grid-template-columns: repeat(var(--days-in-month), var(--cell-width)); background-image: linear-gradient(to right, var(--border-color) 1px, transparent 1px); background-size: var(--cell-width) 100%; min-height: 500px; padding: 10px 0; position: relative; }
 
-/* Today Line Marker */
-.today-marker {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: var(--primary-red);
-    z-index: 5;
-    pointer-events: none;
-    box-shadow: 0 0 8px rgba(255, 118, 117, 0.4);
+.gantt-body { 
+    display: grid; 
+    grid-template-columns: repeat(var(--days-in-month), var(--cell-width)); 
+    background-image: linear-gradient(to right, var(--border-color) 1px, transparent 1px); 
+    background-size: var(--cell-width) 100%; 
+    min-height: 500px; padding: 10px 0; 
+    position: relative; 
 }
 
-/* Task Bar & Progress Fill */
+/* Red Line Marker */
+.today-marker {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: var(--primary-red);
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Task Bar Styles */
 .task-bar { 
     height: 44px; margin: 8px 5px; border-radius: 22px; 
     color: white; display: flex; align-items: center; 
     padding: 0 15px; font-size: 14px; font-weight: 600; 
-    cursor: pointer; position: relative; overflow: hidden; z-index: 10;
+    cursor: pointer; position: relative; overflow: hidden; z-index: 2;
 }
 .task-bar.clipped-left { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: 0; }
 .task-bar.clipped-right { border-top-right-radius: 0; border-bottom-right-radius: 0; margin-right: 0; }
 
 .task-progress-fill { position: absolute; top: 0; left: 0; height: 100%; z-index: 1; transition: width 0.3s ease; }
-.task-content { position: relative; z-index: 2; width: 100%; display: flex; justify-content: space-between; align-items: center; }
-.task-name-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-.check-badge { background: white; color: #2ecc71; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; }
-.arrow-indicator { font-size: 18px; margin: 0 4px; opacity: 0.8; }
+.task-inner-content { position: relative; z-index: 2; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+.task-name-span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.checkmark-icon { background: white; color: #2ecc71; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; }
+.arrow-glyph { font-size: 18px; margin: 0 4px; opacity: 0.8; }
 
-/* Sidebar & Dash */
+/* Minimalist Task Editor Drawer */
+.task-editor-panel { 
+    position: absolute; top: 0; right: -100%; width: 100%; height: 100%; 
+    background: white; z-index: 100; 
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    display: flex; flex-direction: column; 
+    border-left: 1px solid var(--border-color); 
+    box-shadow: -10px 0 30px rgba(0,0,0,0.05);
+}
+.task-editor-panel.active { right: 0; }
+
+.drawer-content { padding: 32px 24px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
+
+.input-group label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; }
+.input-group input, .input-group select { 
+    border: none; border-bottom: 2px solid var(--border-color); 
+    padding: 10px 0; font-size: 15px; background: transparent; 
+}
+.input-group input:focus { outline: none; border-bottom-color: var(--primary-blue); }
+
+.subtask-item { background: #f8faff; padding: 12px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.subtask-item span.done { text-decoration: line-through; opacity: 0.5; }
+.remove-btn { color: var(--primary-red); cursor: pointer; margin-left: auto; }
+
+/* Dashboard UI */
 .side-drawer { width: var(--drawer-width); background: #fff; border-left: 1px solid var(--border-color); position: relative; overflow: hidden; }
-.drawer-content { padding: 24px; display: flex; flex-direction: column; gap: 20px; height: 100%; overflow-y: auto; box-sizing: border-box; }
-.drawer-section { background: #fbfcfe; padding: 20px; border-radius: 20px; border: 1px solid var(--border-color); }
-.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-.stat-card { padding: 15px 10px; border-radius: 18px; text-align: center; color: white; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { padding: 15px 10px; border-radius: 18px; text-align: center; color: white; }
 .stat-card.green { background: #55efc4; } 
 .stat-card.blue { background: #74b9ff; } 
 .stat-card.purple { background: #a29bfe; }
-.stat-label { font-size: 10px; font-weight: 600; opacity: 0.9; }
-.stat-value { font-size: 24px; font-weight: 800; }
 
-/* FAB & UI */
-.btn-primary { background: var(--primary-blue); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; }
+.category-pill { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
+.category-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+
 .fab { position: fixed; bottom: 30px; right: 410px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary-blue); color: white; border: none; font-size: 30px; cursor: pointer; box-shadow: 0 10px 20px rgba(77,137,255,0.3); z-index: 10; }
-.task-editor-panel { position: absolute; top: 0; right: -100%; width: 100%; height: 100%; background: white; z-index: 100; transition: right 0.4s ease; display: flex; flex-direction: column; border-left: 1px solid var(--border-color); }
-.task-editor-panel.active { right: 0; }
-.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
-.cal-date.today { background: var(--primary-blue); color: white; }

@@ -22,10 +22,7 @@ let calYear = new Date().getFullYear();
 let myPieChart = null;
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const catColors = { 
-    "Work": "#4d89ff", "Part-time": "#2ecc71", "Life": "#ff7675", 
-    "Self": "#a29bfe", "Family": "#ff9f43", "Friends": "#00d2d3" 
-};
+const catColors = { "Work": "#4d89ff", "Part-time": "#2ecc71", "Life": "#ff7675", "Self": "#a29bfe", "Family": "#ff9f43", "Friends": "#00d2d3" };
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -62,10 +59,8 @@ function renderChart() {
     const viewStart = new Date(year, month, 1);
     const viewEnd = new Date(year, month + 1, 0);
     const daysInMonth = viewEnd.getDate();
-    
     document.documentElement.style.setProperty('--days-in-month', daysInMonth);
 
-    // Date Header
     let headerHtml = '';
     for (let d = 1; d <= daysInMonth; d++) {
         const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(year, month, d).getDay()];
@@ -73,15 +68,14 @@ function renderChart() {
     }
     document.getElementById('date-header').innerHTML = headerHtml;
 
-    // "Today" Red Line Logic
+    // Today Red Line Logic
     const today = new Date();
-    let todayLineHtml = '';
+    let lineHtml = '';
     if (today.getMonth() === month && today.getFullYear() === year) {
-        const day = today.getDate();
-        todayLineHtml = `<div class="today-marker" style="grid-column: ${day};"></div>`;
+        lineHtml = `<div class="today-marker" style="grid-column: ${today.getDate()};"></div>`;
     }
 
-    let bodyHtml = todayLineHtml;
+    let bodyHtml = lineHtml;
     let counts = { "Work": 0, "Part-time": 0, "Life": 0, "Self": 0, "Family": 0, "Friends": 0 };
     
     tasks.forEach(t => {
@@ -91,10 +85,10 @@ function renderChart() {
         if (tStart <= viewEnd && tEnd >= viewStart) {
             if (counts.hasOwnProperty(t.category)) counts[t.category]++;
             
-            const isLeftClipped = tStart < viewStart;
-            const isRightClipped = tEnd > viewEnd;
-            const startPos = isLeftClipped ? 1 : tStart.getDate();
-            const endPos = isRightClipped ? daysInMonth : tEnd.getDate();
+            const isLC = tStart < viewStart;
+            const isRC = tEnd > viewEnd;
+            const startPos = isLC ? 1 : tStart.getDate();
+            const endPos = isRC ? daysInMonth : tEnd.getDate();
             const dur = (endPos - startPos) + 1;
 
             const total = t.subtasks ? t.subtasks.length : 0;
@@ -103,15 +97,15 @@ function renderChart() {
             const fullyDone = total > 0 && total === done;
 
             bodyHtml += `
-                <div class="task-bar ${isLeftClipped ? 'clipped-left' : ''} ${isRightClipped ? 'clipped-right' : ''}" 
+                <div class="task-bar ${isLC ? 'clipped-left' : ''} ${isRC ? 'clipped-right' : ''}" 
                      style="grid-column: ${startPos} / span ${dur}; background: ${catColors[t.category]}44" data-id="${t.id}">
                     <div class="task-progress-fill" style="width: ${progress}%; background: ${catColors[t.category]}"></div>
-                    <div class="task-content">
-                        ${isLeftClipped ? '<span class="arrow-indicator">⇠</span>' : ''}
-                        <span class="task-name-label">${t.name}</span>
+                    <div class="task-inner-content">
+                        ${isLC ? '<span class="arrow-glyph">⇠</span>' : ''}
+                        <span class="task-name-span">${t.name}</span>
                         <div style="display:flex; align-items:center; gap:5px;">
-                            ${fullyDone ? '<span class="check-badge">✓</span>' : ''}
-                            ${isRightClipped ? '<span class="arrow-indicator">⇢</span>' : ''}
+                            ${fullyDone ? '<span class="checkmark-icon">✓</span>' : ''}
+                            ${isRC ? '<span class="arrow-glyph">⇢</span>' : ''}
                         </div>
                     </div>
                 </div>`;
@@ -131,7 +125,7 @@ function renderChart() {
 window.editTask = (id) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
-    document.getElementById('panelTitle').innerText = "Edit Project";
+    document.getElementById('panelTitle').innerText = "Project Details";
     document.getElementById('taskId').value = task.id;
     document.getElementById('taskName').value = task.name;
     document.getElementById('startDate').value = task.start;
@@ -145,10 +139,10 @@ window.editTask = (id) => {
 
 function renderSubtaskList() {
     document.getElementById('subtaskContainer').innerHTML = tempSubtasks.map((s, i) => `
-        <div class="subtask-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+        <div class="subtask-item">
             <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleSub(${i})">
-            <span style="${s.done ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${s.text}</span>
-            <span onclick="removeSub(${i})" style="color:red; cursor:pointer; margin-left:auto;">✕</span>
+            <span class="${s.done ? 'done' : ''}">${s.text}</span>
+            <span onclick="removeSub(${i})" class="remove-btn">✕</span>
         </div>
     `).join('');
 }
@@ -209,8 +203,8 @@ function updatePieChart(counts) {
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
     });
     document.getElementById('categoryList').innerHTML = Object.entries(counts).map(([cat, count]) => `
-        <div class="category-pill" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
-            <span><i class="category-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background:${catColors[cat]}; margin-right: 5px;"></i>${cat}</span>
+        <div class="category-pill">
+            <span><i class="category-dot" style="background:${catColors[cat]}"></i>${cat}</span>
             <b>${count}</b>
         </div>
     `).join('');
@@ -232,7 +226,7 @@ function renderMiniCalendar() {
 document.getElementById('openModalBtn').onclick = () => { 
     document.getElementById('taskForm').reset(); 
     document.getElementById('taskId').value = ""; 
-    document.getElementById('panelTitle').innerText = "Add Project";
+    document.getElementById('panelTitle').innerText = "Project Details";
     document.getElementById('deleteTaskBtn').style.display = "none";
     tempSubtasks = []; 
     renderSubtaskList(); 
