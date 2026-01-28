@@ -22,7 +22,15 @@ let calYear = new Date().getFullYear();
 let myPieChart = null;
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const catColors = { "Work": "#4d89ff", "Part-time": "#2ecc71", "Life": "#ff7675", "Self": "#a29bfe", "Family": "#ff9f43", "Friends": "#00d2d3" };
+const catColors = { 
+    "Work": "#4d89ff", 
+    "Part-time": "#2ecc71", 
+    "Life": "#ff7675", 
+    "Self": "#a29bfe", 
+    "Family": "#ff9f43", 
+    "Friends": "#00d2d3",
+    "General": "#94a3b8" // Fallback color
+};
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -35,6 +43,7 @@ onAuthStateChanged(auth, (user) => {
 });
 
 async function loadTasks() {
+    if (!auth.currentUser) return;
     const q = query(collection(db, "tasks"), where("userId", "==", auth.currentUser.uid));
     const snap = await getDocs(q);
     tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -55,9 +64,11 @@ function initSelectors() {
 function renderChart() {
     const month = parseInt(document.getElementById('monthSelect').value);
     const year = parseInt(document.getElementById('yearSelect').value);
+    
     const viewStart = new Date(year, month, 1);
     const viewEnd = new Date(year, month + 1, 0);
     const daysInMonth = viewEnd.getDate();
+    
     document.documentElement.style.setProperty('--days-in-month', daysInMonth);
 
     let headerHtml = '';
@@ -74,8 +85,10 @@ function renderChart() {
         const tStart = new Date(t.start);
         const tEnd = new Date(t.end);
 
+        // Fix: Display task if it exists ANYWHERE in the current month
         if (tStart <= viewEnd && tEnd >= viewStart) {
-            counts[t.category]++;
+            if (counts[t.category] !== undefined) counts[t.category]++;
+            
             const isLeftClipped = tStart < viewStart;
             const isRightClipped = tEnd > viewEnd;
 
@@ -87,11 +100,12 @@ function renderChart() {
             const done = t.subtasks ? t.subtasks.filter(s => s.done).length : 0;
             const progress = total > 0 ? (done / total) * 100 : 0;
             const fullyDone = total > 0 && total === done;
+            const color = catColors[t.category] || catColors["General"];
 
             bodyHtml += `
                 <div class="task-bar ${isLeftClipped ? 'clipped-left' : ''} ${isRightClipped ? 'clipped-right' : ''}" 
-                     style="grid-column: ${startPos} / span ${dur}; background: ${catColors[t.category]}44" data-id="${t.id}">
-                    <div class="task-progress-fill" style="width: ${progress}%; background: ${catColors[t.category]}"></div>
+                     style="grid-column: ${startPos} / span ${dur}; background: ${color}44" data-id="${t.id}">
+                    <div class="task-progress-fill" style="width: ${progress}%; background: ${color}"></div>
                     <div class="task-content">
                         ${isLeftClipped ? '<span class="arrow-indicator">⇠</span>' : ''}
                         <span class="task-name-label">${t.name}</span>
@@ -165,7 +179,7 @@ document.getElementById('taskForm').onsubmit = async (e) => {
     else await addDoc(collection(db, "tasks"), data);
     
     document.getElementById('taskEditor').classList.remove('active');
-    loadTasks();
+    await loadTasks(); // Force reload
 };
 
 document.getElementById('deleteTaskBtn').onclick = async () => {
@@ -173,7 +187,7 @@ document.getElementById('deleteTaskBtn').onclick = async () => {
     if (id && confirm("Are you sure you want to delete this project?")) {
         await deleteDoc(doc(db, "tasks", id));
         document.getElementById('taskEditor').classList.remove('active');
-        loadTasks();
+        await loadTasks();
     }
 };
 

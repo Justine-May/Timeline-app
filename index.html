@@ -9,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="full-screen-app">
-
     <div id="authOverlay" class="auth-overlay">
         <div class="auth-card">
             <h2>Gantt Pro</h2>
@@ -22,7 +21,6 @@
             </div>
         </div>
     </div>
-
     <header class="main-header">
         <h1>Project Tasks</h1>
         <div class="header-right">
@@ -34,7 +32,6 @@
             </div>
         </div>
     </header>
-
     <div class="main-layout">
         <main class="gantt-viewport">
             <div class="chart-window">
@@ -42,7 +39,6 @@
                 <div id="gantt-body" class="gantt-body"></div>
             </div>
         </main>
-
         <aside class="side-drawer" id="sidebar">
             <div class="task-editor-panel" id="taskEditor">
                 <div class="panel-header" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color);">
@@ -86,14 +82,12 @@
                     </section>
                 </div>
             </div>
-
             <div class="drawer-content">
                 <div class="stats-row">
                     <div class="stat-card green"><span class="stat-label">Total</span><span class="stat-value" id="totalStat">0</span></div>
                     <div class="stat-card blue"><span class="stat-label">Active</span><span class="stat-value" id="activeStat">0</span></div>
                     <div class="stat-card purple"><span class="stat-label">Done</span><span class="stat-value" id="doneCount">0</span></div>
                 </div>
-
                 <section class="drawer-section">
                     <h3>Category Breakdown</h3>
                     <div style="height: 180px; margin-bottom: 10px;">
@@ -101,7 +95,6 @@
                     </div>
                     <div class="category-grid-legend" id="categoryList"></div>
                 </section>
-
                 <section class="drawer-section">
                     <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <button class="cal-nav" id="prevCal">❮</button>
@@ -113,9 +106,7 @@
             </div>
         </aside>
     </div>
-
     <button class="fab" id="openModalBtn">+</button>
-
     <script type="module" src="script.js"></script>
 </body>
 </html>
