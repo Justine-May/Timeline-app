@@ -71,16 +71,16 @@ function renderChart() {
     let counts = { "Work": 0, "Part-time": 0, "Life": 0, "Self": 0, "Family": 0, "Friends": 0 };
     
     tasks.forEach(t => {
-        const taskStart = new Date(t.start);
-        const taskEnd = new Date(t.end);
+        const tStart = new Date(t.start);
+        const tEnd = new Date(t.end);
 
-        if (taskStart <= viewEnd && taskEnd >= viewStart) {
+        if (tStart <= viewEnd && tEnd >= viewStart) {
             counts[t.category]++;
-            const isLeftClipped = taskStart < viewStart;
-            const isRightClipped = taskEnd > viewEnd;
+            const isLeftClipped = tStart < viewStart;
+            const isRightClipped = tEnd > viewEnd;
 
-            const startPos = isLeftClipped ? 1 : taskStart.getDate();
-            const endPos = isRightClipped ? daysInMonth : taskEnd.getDate();
+            const startPos = isLeftClipped ? 1 : tStart.getDate();
+            const endPos = isRightClipped ? daysInMonth : tEnd.getDate();
             const dur = (endPos - startPos) + 1;
 
             const total = t.subtasks ? t.subtasks.length : 0;
@@ -90,15 +90,14 @@ function renderChart() {
 
             bodyHtml += `
                 <div class="task-bar ${isLeftClipped ? 'clipped-left' : ''} ${isRightClipped ? 'clipped-right' : ''}" 
-                     style="grid-column: ${startPos} / span ${dur}; background: ${catColors[t.category]}55" 
-                     data-id="${t.id}">
+                     style="grid-column: ${startPos} / span ${dur}; background: ${catColors[t.category]}44" data-id="${t.id}">
                     <div class="task-progress-fill" style="width: ${progress}%; background: ${catColors[t.category]}"></div>
-                    <div class="task-inner-ui">
-                        ${isLeftClipped ? '<span class="arrow">⇠</span>' : ''}
-                        <span class="task-name-text">${t.name}</span>
+                    <div class="task-content">
+                        ${isLeftClipped ? '<span class="arrow-indicator">⇠</span>' : ''}
+                        <span class="task-name-label">${t.name}</span>
                         <div style="display:flex; align-items:center; gap:5px;">
-                            ${fullyDone ? '<span class="task-check-circle">✓</span>' : ''}
-                            ${isRightClipped ? '<span class="arrow">⇢</span>' : ''}
+                            ${fullyDone ? '<span class="check-badge">✓</span>' : ''}
+                            ${isRightClipped ? '<span class="arrow-indicator">⇢</span>' : ''}
                         </div>
                     </div>
                 </div>`;
