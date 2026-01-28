@@ -23,13 +23,8 @@ let myPieChart = null;
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const catColors = { 
-    "Work": "#4d89ff", 
-    "Part-time": "#2ecc71", 
-    "Life": "#ff7675", 
-    "Self": "#a29bfe", 
-    "Family": "#ff9f43", 
-    "Friends": "#00d2d3",
-    "General": "#94a3b8" // Fallback color
+    "Work": "#4d89ff", "Part-time": "#2ecc71", "Life": "#ff7675", 
+    "Self": "#a29bfe", "Family": "#ff9f43", "Friends": "#00d2d3" 
 };
 
 onAuthStateChanged(auth, (user) => {
@@ -64,13 +59,13 @@ function initSelectors() {
 function renderChart() {
     const month = parseInt(document.getElementById('monthSelect').value);
     const year = parseInt(document.getElementById('yearSelect').value);
-    
     const viewStart = new Date(year, month, 1);
     const viewEnd = new Date(year, month + 1, 0);
     const daysInMonth = viewEnd.getDate();
     
     document.documentElement.style.setProperty('--days-in-month', daysInMonth);
 
+    // Date Header
     let headerHtml = '';
     for (let d = 1; d <= daysInMonth; d++) {
         const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(year, month, d).getDay()];
@@ -78,20 +73,26 @@ function renderChart() {
     }
     document.getElementById('date-header').innerHTML = headerHtml;
 
-    let bodyHtml = '';
+    // "Today" Red Line Logic
+    const today = new Date();
+    let todayLineHtml = '';
+    if (today.getMonth() === month && today.getFullYear() === year) {
+        const day = today.getDate();
+        todayLineHtml = `<div class="today-marker" style="grid-column: ${day};"></div>`;
+    }
+
+    let bodyHtml = todayLineHtml;
     let counts = { "Work": 0, "Part-time": 0, "Life": 0, "Self": 0, "Family": 0, "Friends": 0 };
     
     tasks.forEach(t => {
         const tStart = new Date(t.start);
         const tEnd = new Date(t.end);
 
-        // Fix: Display task if it exists ANYWHERE in the current month
         if (tStart <= viewEnd && tEnd >= viewStart) {
-            if (counts[t.category] !== undefined) counts[t.category]++;
+            if (counts.hasOwnProperty(t.category)) counts[t.category]++;
             
             const isLeftClipped = tStart < viewStart;
             const isRightClipped = tEnd > viewEnd;
-
             const startPos = isLeftClipped ? 1 : tStart.getDate();
             const endPos = isRightClipped ? daysInMonth : tEnd.getDate();
             const dur = (endPos - startPos) + 1;
@@ -100,12 +101,11 @@ function renderChart() {
             const done = t.subtasks ? t.subtasks.filter(s => s.done).length : 0;
             const progress = total > 0 ? (done / total) * 100 : 0;
             const fullyDone = total > 0 && total === done;
-            const color = catColors[t.category] || catColors["General"];
 
             bodyHtml += `
                 <div class="task-bar ${isLeftClipped ? 'clipped-left' : ''} ${isRightClipped ? 'clipped-right' : ''}" 
-                     style="grid-column: ${startPos} / span ${dur}; background: ${color}44" data-id="${t.id}">
-                    <div class="task-progress-fill" style="width: ${progress}%; background: ${color}"></div>
+                     style="grid-column: ${startPos} / span ${dur}; background: ${catColors[t.category]}44" data-id="${t.id}">
+                    <div class="task-progress-fill" style="width: ${progress}%; background: ${catColors[t.category]}"></div>
                     <div class="task-content">
                         ${isLeftClipped ? '<span class="arrow-indicator">⇠</span>' : ''}
                         <span class="task-name-label">${t.name}</span>
@@ -179,7 +179,7 @@ document.getElementById('taskForm').onsubmit = async (e) => {
     else await addDoc(collection(db, "tasks"), data);
     
     document.getElementById('taskEditor').classList.remove('active');
-    await loadTasks(); // Force reload
+    await loadTasks();
 };
 
 document.getElementById('deleteTaskBtn').onclick = async () => {
