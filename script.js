@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// --- Configuration ---
 const firebaseConfig = {
   apiKey: "AIzaSyAFtu27m81jshmtbEAT5Z8Uy5nsEZX5RaE",
   authDomain: "gantt-chart-23147.firebaseapp.com",
@@ -15,6 +16,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// --- State Management ---
 let tasks = [];
 let tempSubtasks = []; 
 let calMonth = new Date().getMonth();
@@ -24,14 +26,14 @@ let myPieChart = null;
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const catColors = { 
     "Work": "#4d89ff", 
-    "Part-time": "#2ecc71", 
+    "Part-time": "#10b981", 
     "Life": "#ff7675", 
-    "Self": "#a29bfe", 
-    "Family": "#ff9f43", 
-    "Friends": "#00d2d3",
-    "General": "#94a3b8" // Fallback color
+    "Self": "#8b5cf6", 
+    "Family": "#f59e0b", 
+    "Friends": "#06b6d4"
 };
 
+// --- Auth Observer ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         document.getElementById('authOverlay').style.display = 'none';
@@ -42,6 +44,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
+// --- Data Fetching ---
 async function loadTasks() {
     if (!auth.currentUser) return;
     const q = query(collection(db, "tasks"), where("userId", "==", auth.currentUser.uid));
@@ -50,6 +53,7 @@ async function loadTasks() {
     renderChart();
 }
 
+// --- UI Initialization ---
 function initSelectors() {
     const mSel = document.getElementById('monthSelect');
     const ySel = document.getElementById('yearSelect');
@@ -61,6 +65,7 @@ function initSelectors() {
     }
 }
 
+// --- Core Rendering Logic ---
 function renderChart() {
     const month = parseInt(document.getElementById('monthSelect').value);
     const year = parseInt(document.getElementById('yearSelect').value);
@@ -71,56 +76,65 @@ function renderChart() {
     
     document.documentElement.style.setProperty('--days-in-month', daysInMonth);
 
+    // 1. Render Date Header
     let headerHtml = '';
     for (let d = 1; d <= daysInMonth; d++) {
-        const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(year, month, d).getDay()];
-        headerHtml += `<div class="day-column-header"><span>${dayName}</span><b>${d}</b></div>`;
+        const dateObj = new Date(year, month, d);
+        const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dateObj.getDay()];
+        const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+        headerHtml += `
+            <div class="day-column-header" style="${isWeekend ? 'background: #f8fafc' : ''}">
+                <span>${dayName}</span>
+                <b>${d}</b>
+            </div>`;
     }
     document.getElementById('date-header').innerHTML = headerHtml;
 
+    // 2. Filter & Render Tasks
     let bodyHtml = '';
     let counts = { "Work": 0, "Part-time": 0, "Life": 0, "Self": 0, "Family": 0, "Friends": 0 };
     
-    tasks.forEach(t => {
+    const visibleTasks = tasks.filter(t => {
         const tStart = new Date(t.start);
         const tEnd = new Date(t.end);
+        return tStart <= viewEnd && tEnd >= viewStart;
+    });
 
-        // Fix: Display task if it exists ANYWHERE in the current month
-        if (tStart <= viewEnd && tEnd >= viewStart) {
+    // Handle Empty State
+    const emptyState = document.getElementById('empty-state');
+    if (visibleTasks.length === 0) {
+        emptyState.style.display = 'flex';
+    } else {
+        emptyState.style.display = 'none';
+        visibleTasks.forEach(t => {
             if (counts[t.category] !== undefined) counts[t.category]++;
             
-            const isLeftClipped = tStart < viewStart;
-            const isRightClipped = tEnd > viewEnd;
-
-            const startPos = isLeftClipped ? 1 : tStart.getDate();
-            const endPos = isRightClipped ? daysInMonth : tEnd.getDate();
+            const tStart = new Date(t.start);
+            const tEnd = new Date(t.end);
+            const startPos = tStart < viewStart ? 1 : tStart.getDate();
+            const endPos = tEnd > viewEnd ? daysInMonth : tEnd.getDate();
             const dur = (endPos - startPos) + 1;
 
-            const total = t.subtasks ? t.subtasks.length : 0;
             const done = t.subtasks ? t.subtasks.filter(s => s.done).length : 0;
+            const total = t.subtasks ? t.subtasks.length : 0;
             const progress = total > 0 ? (done / total) * 100 : 0;
-            const fullyDone = total > 0 && total === done;
-            const color = catColors[t.category] || catColors["General"];
+            const color = catColors[t.category] || "#94a3b8";
 
             bodyHtml += `
-                <div class="task-bar ${isLeftClipped ? 'clipped-left' : ''} ${isRightClipped ? 'clipped-right' : ''}" 
-                     style="grid-column: ${startPos} / span ${dur}; background: ${color}44" data-id="${t.id}">
+                <div class="task-bar" style="grid-column: ${startPos} / span ${dur}; background: ${color}15" data-id="${t.id}">
                     <div class="task-progress-fill" style="width: ${progress}%; background: ${color}"></div>
                     <div class="task-content">
-                        ${isLeftClipped ? '<span class="arrow-indicator">⇠</span>' : ''}
                         <span class="task-name-label">${t.name}</span>
-                        <div style="display:flex; align-items:center; gap:5px;">
-                            ${fullyDone ? '<span class="check-badge">✓</span>' : ''}
-                            ${isRightClipped ? '<span class="arrow-indicator">⇢</span>' : ''}
-                        </div>
+                        ${progress === 100 ? '<span class="check-badge">✓</span>' : ''}
                     </div>
                 </div>`;
-        }
-    });
-    document.getElementById('gantt-body').innerHTML = bodyHtml;
+        });
+    }
+    document.getElementById('gantt-body').innerHTML += bodyHtml;
 
+    // Event Delegation for Task Clicks
     document.querySelectorAll('.task-bar').forEach(bar => {
-        bar.onclick = () => editTask(bar.getAttribute('data-id'));
+        bar.onclick = () => window.editTask(bar.getAttribute('data-id'));
     });
     
     updatePieChart(counts);
@@ -128,6 +142,7 @@ function renderChart() {
     renderMiniCalendar();
 }
 
+// --- Task Editing ---
 window.editTask = (id) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
@@ -145,10 +160,10 @@ window.editTask = (id) => {
 
 function renderSubtaskList() {
     document.getElementById('subtaskContainer').innerHTML = tempSubtasks.map((s, i) => `
-        <div class="subtask-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+        <div class="subtask-item">
             <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleSub(${i})">
-            <span style="${s.done ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${s.text}</span>
-            <span onclick="removeSub(${i})" style="color:red; cursor:pointer; margin-left:auto;">✕</span>
+            <span style="${s.done ? 'text-decoration: line-through; opacity: 0.5;' : ''}">${s.text}</span>
+            <span onclick="removeSub(${i})" class="remove-sub-btn">✕</span>
         </div>
     `).join('');
 }
@@ -157,13 +172,14 @@ window.toggleSub = (i) => { tempSubtasks[i].done = !tempSubtasks[i].done; render
 window.removeSub = (i) => { tempSubtasks.splice(i, 1); renderSubtaskList(); };
 
 document.getElementById('addSubtaskBtn').onclick = () => {
-    const val = document.getElementById('subtaskInput').value;
-    if (!val) return;
-    tempSubtasks.push({ text: val, done: false });
-    document.getElementById('subtaskInput').value = "";
+    const input = document.getElementById('subtaskInput');
+    if (!input.value) return;
+    tempSubtasks.push({ text: input.value, done: false });
+    input.value = "";
     renderSubtaskList();
 };
 
+// --- Form Submission ---
 document.getElementById('taskForm').onsubmit = async (e) => {
     e.preventDefault();
     const id = document.getElementById('taskId').value;
@@ -175,11 +191,12 @@ document.getElementById('taskForm').onsubmit = async (e) => {
         end: document.getElementById('endDate').value,
         subtasks: [...tempSubtasks]
     };
+
     if (id) await updateDoc(doc(db, "tasks", id), data);
     else await addDoc(collection(db, "tasks"), data);
     
     document.getElementById('taskEditor').classList.remove('active');
-    await loadTasks(); // Force reload
+    loadTasks();
 };
 
 document.getElementById('deleteTaskBtn').onclick = async () => {
@@ -187,14 +204,15 @@ document.getElementById('deleteTaskBtn').onclick = async () => {
     if (id && confirm("Are you sure you want to delete this project?")) {
         await deleteDoc(doc(db, "tasks", id));
         document.getElementById('taskEditor').classList.remove('active');
-        await loadTasks();
+        loadTasks();
     }
 };
 
+// --- Analytics & Widgets ---
 function updateDashboardStats() {
     document.getElementById('totalStat').innerText = tasks.length;
-    document.getElementById('activeStat').innerText = tasks.filter(t => t.subtasks && t.subtasks.some(s => !s.done)).length;
-    document.getElementById('doneCount').innerText = tasks.filter(t => t.subtasks && t.subtasks.length > 0 && t.subtasks.every(s => s.done)).length;
+    document.getElementById('activeStat').innerText = tasks.filter(t => t.subtasks?.some(s => !s.done)).length;
+    document.getElementById('doneCount').innerText = tasks.filter(t => t.subtasks?.length > 0 && t.subtasks.every(s => s.done)).length;
 }
 
 function updatePieChart(counts) {
@@ -204,13 +222,24 @@ function updatePieChart(counts) {
         type: 'doughnut',
         data: {
             labels: Object.keys(counts),
-            datasets: [{ data: Object.values(counts), backgroundColor: Object.values(catColors), borderWidth: 0 }]
+            datasets: [{ 
+                data: Object.values(counts), 
+                backgroundColor: Object.values(catColors), 
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } }, 
+            cutout: '80%' 
+        }
     });
+    
     document.getElementById('categoryList').innerHTML = Object.entries(counts).map(([cat, count]) => `
-        <div class="category-pill" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
-            <span><i class="category-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background:${catColors[cat]}; margin-right: 5px;"></i>${cat}</span>
+        <div class="category-pill">
+            <span><i style="background:${catColors[cat]}"></i>${cat}</span>
             <b>${count}</b>
         </div>
     `).join('');
@@ -221,6 +250,7 @@ function renderMiniCalendar() {
     let html = ["S","M","T","W","T","F","S"].map(d => `<div class="cal-day-label">${d}</div>`).join('');
     const firstDay = new Date(calYear, calMonth, 1).getDay();
     const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    
     for (let i = 0; i < firstDay; i++) html += `<div></div>`;
     for (let d = 1; d <= daysInMonth; d++) {
         const isToday = new Date().toDateString() === new Date(calYear, calMonth, d).toDateString() ? 'today' : '';
@@ -229,10 +259,11 @@ function renderMiniCalendar() {
     document.getElementById('miniCalendar').innerHTML = html;
 }
 
+// --- Global UI Listeners ---
 document.getElementById('openModalBtn').onclick = () => { 
     document.getElementById('taskForm').reset(); 
     document.getElementById('taskId').value = ""; 
-    document.getElementById('panelTitle').innerText = "Add Project";
+    document.getElementById('panelTitle').innerText = "New Project";
     document.getElementById('deleteTaskBtn').style.display = "none";
     tempSubtasks = []; 
     renderSubtaskList(); 
@@ -243,6 +274,7 @@ document.getElementById('closeEditorBtn').onclick = () => document.getElementByI
 document.getElementById('loginBtn').onclick = () => signInWithEmailAndPassword(auth, document.getElementById('authEmail').value, document.getElementById('authPassword').value).catch(e => alert(e.message));
 document.getElementById('signupBtn').onclick = () => createUserWithEmailAndPassword(auth, document.getElementById('authEmail').value, document.getElementById('authPassword').value).catch(e => alert(e.message));
 document.getElementById('logoutBtn').onclick = () => signOut(auth);
+
 document.getElementById('prevCal').onclick = () => { calMonth--; if(calMonth < 0){calMonth=11; calYear--;} renderMiniCalendar(); };
 document.getElementById('nextCal').onclick = () => { calMonth++; if(calMonth > 11){calMonth=0; calYear++;} renderMiniCalendar(); };
 document.getElementById('monthSelect').onchange = renderChart;
